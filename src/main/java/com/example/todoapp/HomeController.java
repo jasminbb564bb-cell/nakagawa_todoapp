@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
@@ -23,14 +24,22 @@ public class HomeController {
 
     @GetMapping("/")
     public String index(Model model) {
-        model.addAttribute("title", "繧・ｋ縺薙→邂｡逅・);
+        model.addAttribute("title", "アプリ一覧へ戻る");
         return "index";
     }
 
     @GetMapping("/todos")
-    public String todos(Model model) {
-        List<Todo> todos = todoMapper.findAll();
+    public String todos(
+            @RequestParam(name = "keyword", defaultValue = "") String keyword,
+            @RequestParam(name = "category", defaultValue = "すべて") String category,
+            @RequestParam(name = "order", defaultValue = "asc") String order,
+            Model model) {
+        String normalizedOrder = "desc".equals(order) ? "desc" : "asc";
+        List<Todo> todos = todoMapper.search(keyword, category, normalizedOrder);
         model.addAttribute("todos", todos);
+        model.addAttribute("keyword", keyword);
+        model.addAttribute("category", category);
+        model.addAttribute("order", normalizedOrder);
         return "todos";
     }
 
