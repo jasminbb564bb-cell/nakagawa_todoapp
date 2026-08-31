@@ -1,10 +1,16 @@
 package com.example.todoapp.api;
 
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
 import java.net.URI;
 
 import com.example.todoapp.Todo;
 import com.example.todoapp.TodoService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +52,8 @@ public class TodoApiController {
     }
 
     @PostMapping("/api/todos")
-    public ResponseEntity<TodoDto> create(@RequestBody Todo todo) {
+    public ResponseEntity<TodoDto> create(@Valid @RequestBody TodoRequest request) {
+        Todo todo = toTodo(request);
         todoService.create(todo);
         Todo created = todoService.findById(todo.getId());
         return ResponseEntity.created(URI.create("/api/todos/" + todo.getId()))
@@ -54,11 +61,12 @@ public class TodoApiController {
     }
 
     @PutMapping("/api/todos/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody Todo todo) {
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody TodoRequest request) {
         Todo existing = todoService.findById(id);
         if (existing == null) {
             return notFound(id);
         }
+        Todo todo = toTodo(request);
         todo.setId(id);
         todoService.update(todo);
         return ResponseEntity.ok(TodoDto.from(todoService.findById(id)));
@@ -80,5 +88,33 @@ public class TodoApiController {
         problem.setDetail("Todo with id " + id + " was not found.");
         problem.setInstance(URI.create("/api/todos/" + id));
         return ResponseEntity.status(404).body(problem);
+    }
+
+    @org.springframework.web.bind.annotation.ExceptionHandler(MethodArgumentNotValidException.class)
+    private ResponseEntity<org.springframework.http.ProblemDetail> badRequest(
+            MethodArgumentNotValidException exception, HttpServletRequest request) {
+        org.springframework.http.ProblemDetail problem =
+                org.springframework.http.ProblemDetail.forStatus(400);
+        problem.setTitle("Bad Request");
+        problem.setDetail("入力に誤りがあります");
+        problem.setInstance(URI.create(request.getRequestURI()));
+
+        List<Map<String, String>> errors = new ArrayList<>();
+        for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
+            errors.add(Map.of("field", fieldError.getField(), "message", fieldError.getDefaultMessage()));
+        }
+        problem.setProperty("errors", errors);
+        return ResponseEntity.badRequest().body(problem);
+    }
+
+    private Todo toTodo(TodoRequest request) {
+        Todo todo = new Todo();
+        todo.setTitle(request.getTitle());
+        todo.setDetail(request.getDetail());
+        todo.setCategory(request.getCategory());
+        todo.setPriority(request.getPriority());
+        todo.setDueDate(request.getDueDate());
+        todo.setCompleted(request.getCompleted());
+        return todo;
     }
 }
