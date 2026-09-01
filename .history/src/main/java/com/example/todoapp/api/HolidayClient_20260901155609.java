@@ -13,7 +13,7 @@ import org.springframework.web.client.RestClient;
 @Component
 public class HolidayClient {
 
-    private static final String HOLIDAYS_URL = "https://holidays-jp.github.io/api/v1/date.json";
+    private static final String HOLIDAYS_URL = "https://holidays-jp.github.io/v1/date.json";
 
     private final RestClient restClient;
 
