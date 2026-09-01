@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.net.URI;
+import java.time.LocalDate;
 
 import com.example.todoapp.Todo;
 import com.example.todoapp.TodoService;
@@ -34,9 +35,11 @@ public class TodoApiController {
     public List<TodoDto> todos(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
             @RequestParam(name = "category", defaultValue = "") String category,
-            @RequestParam(name = "order", defaultValue = "asc") String order) {
+            @RequestParam(name = "order", defaultValue = "asc") String order,
+            @RequestParam(name = "from", required = false) LocalDate from,
+            @RequestParam(name = "to", required = false) LocalDate to) {
         String normalizedOrder = "desc".equals(order) ? "desc" : "asc";
-        return todoService.search(keyword, category, normalizedOrder)
+        return todoService.search(keyword, category, normalizedOrder, from, to)
                 .stream()
                 .map(TodoDto::from)
                 .toList();

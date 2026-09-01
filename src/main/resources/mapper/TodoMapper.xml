@@ -29,6 +29,39 @@
         </choose>
     </select>
 
+    <select id="searchWithDueDate" resultType="com.example.todoapp.Todo">
+        SELECT
+            id,
+            title,
+            detail,
+            category,
+            priority,
+            due_date,
+            completed,
+            created_at,
+            updated_at
+        FROM todos
+        <where>
+            <if test="keyword != null and keyword != ''">
+                title LIKE CONCAT('%', #{keyword}, '%')
+            </if>
+            <if test="category != null and category != '' and category != '縺吶∋縺ｦ'">
+                AND category = #{category}
+            </if>
+            <if test="from != null">
+                AND due_date &gt;= #{from, jdbcType=DATE}
+            </if>
+            <if test="to != null">
+                AND due_date &lt;= #{to, jdbcType=DATE}
+            </if>
+        </where>
+        ORDER BY due_date
+        <choose>
+            <when test="order == 'desc'">DESC</when>
+            <otherwise>ASC</otherwise>
+        </choose>
+    </select>
+
     <select id="findById" parameterType="long" resultType="com.example.todoapp.Todo">
         SELECT
             id,

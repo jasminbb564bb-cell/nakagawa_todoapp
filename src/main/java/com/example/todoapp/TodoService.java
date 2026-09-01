@@ -1,6 +1,7 @@
 package com.example.todoapp;
 
 import java.util.List;
+import java.time.LocalDate;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,10 @@ public class TodoService {
 
     public List<Todo> search(String keyword, String category, String order) {
         return todoMapper.search(keyword, category, order);
+    }
+
+    public List<Todo> search(String keyword, String category, String order, LocalDate from, LocalDate to) {
+        return todoMapper.searchWithDueDate(keyword, category, order, from, to);
     }
 
     public Todo findById(Long id) {
