@@ -9,9 +9,15 @@
 <body>
     <main class="container calendar-page">
         <div class="calendar-header">
-            <a class="btn sub" th:href="@{/calendar(year=${previousYear},month=${previousMonth})}">前の月</a>
+            <div class="calendar-header-left">
+                <a class="btn sub" th:href="@{/calendar(year=${previousYear},month=${previousMonth})}">前の月</a>
+                <a class="btn sub" th:href="@{/calendar(year=${nextYear},month=${nextMonth})}">次の月</a>
+            </div>
             <h1 class="page-title" th:text="${monthTitle}">2026年4月</h1>
-            <a class="btn sub" th:href="@{/calendar(year=${nextYear},month=${nextMonth})}">次の月</a>
+            <div class="calendar-header-right">
+                <a class="btn sub" th:href="@{/todos}">表で見る</a>
+                <a class="btn sub" th:href="@{/todos/new}">新規登録</a>
+            </div>
         </div>
 
         <table class="calendar-table" th:attr="data-from=${from},data-to=${to}">
@@ -44,18 +50,69 @@
             const todos = await res.json();
 
             const cells = document.querySelectorAll('td[data-date]');
+            const todosByDate = {};
             todos.forEach(todo => {
-                cells.forEach(cell => {
-                    if (cell.dataset.date === todo.dueDate) {
-                        const todoName = document.createElement('div');
-                        todoName.textContent = todo.title;
-                        cell.appendChild(todoName);
+                if (!todosByDate[todo.dueDate]) todosByDate[todo.dueDate] = [];
+                todosByDate[todo.dueDate].push(todo);
+            });
+
+            const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+            cells.forEach(cell => {
+                const dateTodos = todosByDate[cell.dataset.date] || [];
+                dateTodos.slice(0, 3).forEach(todo => {
+                    const todoName = document.createElement('a');
+                    todoName.href = `/todos/${todo.id}/edit`;
+                    todoName.textContent = todo.title;
+                    todoName.className = 'calendar-todo-link';
+                    if (todo.dueDate < today && !todo.completed) {
+                        todoName.style.color = 'red';
                     }
+                    cell.appendChild(todoName);
                 });
+                if (dateTodos.length > 3) {
+                    const otherTodos = document.createElement('div');
+                    otherTodos.textContent = `ほか ${dateTodos.length - 3}件`;
+                    cell.appendChild(otherTodos);
+                }
+            });
+        }
+
+        async function loadHolidaysIntoCalendar() {
+            const calendarTable = document.querySelector('.calendar-table');
+            const from = calendarTable.dataset.from;
+            const to = calendarTable.dataset.to;
+            const res = await fetch(`/api/holidays?from=${from}&to=${to}`);
+            const holidays = await res.json();
+
+            if (res.headers.has('X-Holidays-Unavailable')) {
+                const notice = document.createElement('p');
+                notice.textContent = '祝日を取れませんでした';
+                document.querySelector('main').prepend(notice);
+            }
+
+            const style = document.createElement('style');
+            style.textContent = `
+                .calendar-table td.saturday { background-color: #eaf3ff; }
+                .calendar-table td.sunday { background-color: #ffecec; }
+                .calendar-table td.holiday { background-color: #fff4cc; }
+            `;
+            document.head.appendChild(style);
+
+            const cells = document.querySelectorAll('td[data-date]');
+            cells.forEach(cell => {
+                const date = new Date(`${cell.dataset.date}T00:00:00`);
+                if (date.getDay() === 6) cell.classList.add('saturday');
+                if (date.getDay() === 0) cell.classList.add('sunday');
+                if (holidays[cell.dataset.date]) {
+                    cell.classList.add('holiday');
+                    cell.title = holidays[cell.dataset.date];
+                }
             });
         }
 
         loadTodosIntoCalendar();
+        loadHolidaysIntoCalendar();
     </script>
 </body>
 </html>
