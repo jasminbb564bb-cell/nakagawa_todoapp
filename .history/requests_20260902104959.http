@@ -66,12 +66,3 @@ Accept: application/json, text/event-stream
 Mcp-Session-Id: 7d8e080b-6d50-4549-96c0-6c22129338a9
 
 { "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }
-
-### 11. 道具を1つ呼んでみる
-POST http://localhost:8080/mcp
-Content-Type: application/json
-Accept: application/json, text/event-stream
-Mcp-Session-Id: 7d8e080b-6d50-4549-96c0-6c22129338a9
-
-{ "jsonrpc": "2.0", "id": 3, "method": "tools/call",
-  "params": { "name": "list_todos", "arguments": {} } }
