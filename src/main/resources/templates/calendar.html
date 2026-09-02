@@ -111,8 +111,29 @@
             });
         }
 
+        async function loadWeatherIntoCalendar() {
+            const calendarTable = document.querySelector('.calendar-table');
+            const cells = document.querySelectorAll('td[data-date]');
+            try {
+                const res = await fetch(`/api/weather?from=${calendarTable.dataset.from}&to=${calendarTable.dataset.to}`);
+                if (!res.ok) return;
+                const weather = await res.json();
+                cells.forEach(cell => {
+                    if (weather[cell.dataset.date]) {
+                        const weatherLabel = document.createElement('div');
+                        weatherLabel.className = 'calendar-weather';
+                        weatherLabel.textContent = weather[cell.dataset.date];
+                        cell.appendChild(weatherLabel);
+                    }
+                });
+            } catch (error) {
+                // 天気が取れなくても、既に表示しているカレンダーはそのまま残す
+            }
+        }
+
         loadTodosIntoCalendar();
         loadHolidaysIntoCalendar();
+        loadWeatherIntoCalendar();
     </script>
 </body>
 </html>

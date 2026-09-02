@@ -63,7 +63,7 @@ Accept: application/json, text/event-stream
 POST http://localhost:8080/mcp
 Content-Type: application/json
 Accept: application/json, text/event-stream
-Mcp-Session-Id: 8e6de209-7f94-42a4-89d0-54d4c59298a3
+Mcp-Session-Id: e457f1ca-4ff0-4e78-8f56-02839ff2c73e
 
 { "jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {} }
 

@@ -2,6 +2,8 @@ package com.example.todoapp.mcp;
 
 import java.time.LocalDate;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -17,6 +19,8 @@ import com.example.todoapp.api.TodoDto;
 
 @Component
 public class TodoTools {
+
+    public record TodoSummary(int count, Map<String, Integer> byCategory, int overdueCount) {}
 
     private final TodoService todoService;
     private final HolidayClient holidayClient;
@@ -114,6 +118,22 @@ public class TodoTools {
                 .filter(date -> !dueDates.contains(date))
                 .filter(date -> !holidays.contains(date))
                 .toList();
+    }
+
+    @McpTool(name = "summarize_week", description = "指定した期間のやることを一覧ではなく集計し、総件数・ジャンルごとの内訳・期限が過ぎている件数を要約して返す")
+    public TodoSummary summarizeWeek(
+            @McpToolParam(required = false) String from,
+            @McpToolParam(required = false) String to) {
+        LocalDate fromDate = from == null ? null : LocalDate.parse(from);
+        LocalDate toDate = to == null ? null : LocalDate.parse(to);
+        List<Todo> todos = todoService.searchForSummary(fromDate, toDate);
+        Map<String, Integer> byCategory = new LinkedHashMap<>();
+        todos.forEach(todo -> byCategory.merge(todo.getCategory(), 1, Integer::sum));
+        int overdueCount = (int) todos.stream()
+                .filter(todo -> !Boolean.TRUE.equals(todo.getCompleted()))
+                .filter(todo -> todo.getDueDate().isBefore(LocalDate.now()))
+                .count();
+        return new TodoSummary(todos.size(), byCategory, overdueCount);
     }
 
     private static LocalDate parseDate(String date) {

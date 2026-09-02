@@ -11,10 +11,16 @@
             priority,
             due_date,
             completed,
+            completed_at,
+            pinned,
             created_at,
             updated_at
         FROM todos
         <where>
+            <choose><when test="trash">deleted_at IS NOT NULL</when><otherwise>deleted_at IS NULL</otherwise></choose>
+            <if test="!includeCompleted">
+                AND completed = FALSE
+            </if>
             <if test="keyword != null and keyword != ''">
                 title LIKE CONCAT('%', #{keyword}, '%')
             </if>
@@ -22,11 +28,22 @@
                 AND category = #{category}
             </if>
         </where>
-        ORDER BY due_date
+        ORDER BY pinned DESC, due_date
         <choose>
             <when test="order == 'desc'">DESC</when>
             <otherwise>ASC</otherwise>
         </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="count" resultType="int">
+        SELECT COUNT(*) FROM todos
+        <where>
+            <choose><when test="trash">deleted_at IS NOT NULL</when><otherwise>deleted_at IS NULL</otherwise></choose>
+            <if test="!includeCompleted">AND completed = FALSE</if>
+            <if test="keyword != null and keyword != ''">AND title LIKE CONCAT('%', #{keyword}, '%')</if>
+            <if test="category != null and category != '' and category != 'すべて'">AND category = #{category}</if>
+        </where>
     </select>
 
     <select id="searchWithDueDate" resultType="com.example.todoapp.Todo">
@@ -38,10 +55,13 @@
             priority,
             due_date,
             completed,
+            completed_at,
+            pinned,
             created_at,
             updated_at
         FROM todos
         <where>
+            deleted_at IS NULL
             <if test="keyword != null and keyword != ''">
                 title LIKE CONCAT('%', #{keyword}, '%')
             </if>
@@ -55,7 +75,7 @@
                 AND due_date &lt;= #{to, jdbcType=DATE}
             </if>
         </where>
-        ORDER BY due_date
+        ORDER BY pinned DESC, due_date
         <choose>
             <when test="order == 'desc'">DESC</when>
             <otherwise>ASC</otherwise>
@@ -71,10 +91,29 @@
             priority,
             due_date,
             completed,
+            completed_at,
+            pinned,
             created_at,
             updated_at
         FROM todos
-        WHERE id = #{id}
+        WHERE id = #{id} AND deleted_at IS NULL
+    </select>
+
+    <select id="searchForSummary" resultType="com.example.todoapp.Todo">
+        SELECT id, title, detail, category, priority, due_date, completed,
+               completed_at, pinned, created_at, updated_at
+        FROM todos
+        <where>
+            deleted_at IS NULL
+            AND due_date IS NOT NULL
+            <if test="from != null">
+                AND due_date &gt;= #{from, jdbcType=DATE}
+            </if>
+            <if test="to != null">
+                AND due_date &lt;= #{to, jdbcType=DATE}
+            </if>
+        </where>
+        ORDER BY due_date ASC
     </select>
 
     <insert id="insert" parameterType="com.example.todoapp.Todo" useGeneratedKeys="true" keyProperty="id">
@@ -90,12 +129,27 @@
             category = #{category},
             priority = #{priority},
             due_date = #{dueDate, jdbcType=DATE},
-            completed = #{completed}
+            completed = #{completed},
+            completed_at = CASE
+                WHEN completed = FALSE AND #{completed} = TRUE THEN CURRENT_TIMESTAMP
+                WHEN #{completed} = FALSE THEN NULL
+                ELSE completed_at
+            END
         WHERE id = #{id}
     </update>
 
     <delete id="deleteById" parameterType="long">
-        DELETE FROM todos
+        UPDATE todos SET deleted_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
     </delete>
+
+    <update id="softDelete" parameterType="long">
+        UPDATE todos SET deleted_at = CURRENT_TIMESTAMP WHERE id = #{id}
+    </update>
+    <update id="restore" parameterType="long">
+        UPDATE todos SET deleted_at = NULL WHERE id = #{id}
+    </update>
+    <update id="togglePinned">
+        UPDATE todos SET pinned = #{pinned} WHERE id = #{id} AND deleted_at IS NULL
+    </update>
 </mapper>

@@ -11,7 +11,11 @@
         <h1 class="page-title">ToDo一覧</h1>
         <p class="flash" th:if="${message}" th:text="${message}">登録しました</p>
         <p><a class="btn" th:href="@{/todos/new}">新規登録</a> <a class="btn sub" th:href="@{/calendar}">カレンダーで見る</a></p>
+        <p><a class="btn sub" th:href="@{/todos(trash=1)}">削除したものを見る</a></p>
         <form class="search-bar" th:action="@{/todos}" method="get">
+            <div class="form-row">
+                <a class="btn sub" th:href="@{/api/todos.csv(keyword=${keyword}, category=${category}, order=${order}, includeCompleted=${includeCompleted}, trash=${trash ? 1 : 0})}">CSVで書き出す</a>
+            </div>
             <div class="form-row">
                 <label class="form-label" for="keyword">やることの名前</label>
                 <input class="form-input" type="text" id="keyword" name="keyword" th:value="${keyword}">
@@ -29,13 +33,23 @@
             </div>
             <input type="hidden" name="order" th:value="${order}">
             <div class="form-row">
+                <label class="form-label" for="includeCompleted">完了したものも表示する</label>
+                <input type="checkbox" id="includeCompleted" name="includeCompleted" value="true"
+                       th:checked="${includeCompleted}">
+            </div>
+            <div class="form-row">
                 <button class="btn" type="submit">絞り込む</button>
             </div>
             <div class="form-row">
-                <a class="link" th:href="@{/todos(keyword=${keyword}, category=${category}, order='asc')}">期限が近い順</a>
-                <a class="link" th:href="@{/todos(keyword=${keyword}, category=${category}, order='desc')}">期限が遠い順</a>
+                <a class="link" th:href="@{/todos(keyword=${keyword}, category=${category}, order='asc', includeCompleted=${includeCompleted}, page=1)}">期限が近い順</a>
+                <a class="link" th:href="@{/todos(keyword=${keyword}, category=${category}, order='desc', includeCompleted=${includeCompleted}, page=1)}">期限が遠い順</a>
             </div>
         </form>
+        <nav class="pagination" th:if="${totalPages > 1}" aria-label="ページ移動">
+            <a class="link" th:each="pageNumber : ${#numbers.sequence(1, totalPages)}"
+               th:href="@{/todos(keyword=${keyword}, category=${category}, order=${order}, includeCompleted=${includeCompleted}, page=${pageNumber})}"
+               th:text="${pageNumber}" th:classappend="${pageNumber == page} ? 'current'">1</a>
+        </nav>
         <p th:if="${#lists.isEmpty(todos)}">まだ1件も登録されていません</p>
         <table class="todo-table" th:unless="${#lists.isEmpty(todos)}">
             <thead>
@@ -49,13 +63,18 @@
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="todo : ${todos}">
-                    <td th:text="${todo.title}">やること</td>
+                <tr th:each="todo : ${todos}"
+                    th:classappend="${todo.dueDate != null and todo.dueDate.isBefore(T(java.time.LocalDate).now()) and !todo.completed} ? 'overdue'">
+                    <td><form th:action="@{/todos/{id}/pin(id=${todo.id})}" method="post" style="display:inline"><input type="hidden" name="pinned" th:value="${!todo.pinned}"><input type="hidden" name="keyword" th:value="${keyword}"><input type="hidden" name="category" th:value="${category}"><input type="hidden" name="order" th:value="${order}"><input type="hidden" name="includeCompleted" th:value="${includeCompleted}"><input type="hidden" name="trash" th:value="${trash ? 1 : 0}"><input type="hidden" name="page" th:value="${page}"><button type="submit" class="link" th:text="${todo.pinned ? '★' : '☆'}">☆</button></form> <span th:text="${todo.title}">やること</span></td>
                     <td th:text="${todo.category}">ジャンル</td>
-                    <td th:text="${todo.priority == 1 ? '高' : (todo.priority == 2 ? '中' : '低')}">優先度</td>
+                    <td>
+                        <span class="priority-mark" th:if="${todo.priority == 1}" aria-label="最優先">★</span>
+                        <span th:text="${todo.priority == 1 ? '高' : (todo.priority == 2 ? '中' : '低')}">優先度</span>
+                    </td>
                     <td th:text="${todo.dueDate}">期限</td>
-                    <td th:text="${todo.completed ? '完了' : '未完了'}">状態</td>
-                    <td><a class="link" th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a> <a class="link" th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a></td>
+                    <td th:text="${todo.completed ? '完了' + ' (' + #temporals.format(todo.completedAt, 'yyyy-MM-dd HH:mm') + ')' : '未完了'}">状態</td>
+                    <td th:if="${trash}"><form th:action="@{/todos/{id}/restore(id=${todo.id})}" method="post"><button class="link" type="submit">戻す</button></form></td>
+                    <td th:unless="${trash}"><a class="link" th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a> <a class="link" th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a></td>
                 </tr>
             </tbody>
         </table>
