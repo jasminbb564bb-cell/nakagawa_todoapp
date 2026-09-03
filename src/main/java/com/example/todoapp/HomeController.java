@@ -32,6 +32,11 @@ public class HomeController {
         return "index";
     }
 
+    @GetMapping("/login")
+    public String login() {
+        return "login";
+    }
+
     @GetMapping("/todos")
     public String todos(
             @RequestParam(name = "keyword", defaultValue = "") String keyword,
