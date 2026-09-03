@@ -74,7 +74,7 @@
                     <td th:text="${todo.dueDate}">期限</td>
                     <td th:text="${todo.completed ? '完了' + ' (' + #temporals.format(todo.completedAt, 'yyyy-MM-dd HH:mm') + ')' : '未完了'}">状態</td>
                     <td th:if="${trash}"><form th:action="@{/todos/{id}/restore(id=${todo.id})}" method="post"><button class="link" type="submit">戻す</button></form></td>
-                    <td th:unless="${trash}"><a class="link" th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a> <a class="link" th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a></td>
+                    <td th:unless="${trash}"><a class="link" th:href="@{/todos/{id}/edit(id=${todo.id})}">編集</a> <a class="link" th:href="@{/todos/{id}/duplicate(id=${todo.id})}">複製</a> <a class="link" th:href="@{/todos/{id}/delete(id=${todo.id})}">削除</a></td>
                     <td th:unless="${trash}"><a class="link" th:href="@{/todos/{id}/share(id=${todo.id})}">共有</a></td>
                 </tr>
             </tbody>

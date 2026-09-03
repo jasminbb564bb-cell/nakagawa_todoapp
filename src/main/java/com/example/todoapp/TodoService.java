@@ -76,6 +76,7 @@ public class TodoService {
 
     public void create(String username, Todo todo) {
         todo.setUserId(userId(username));
+        todo.setCompleted(false);
         todoMapper.insert(todo);
         log.info("登録: id={}", todo.getId());
     }

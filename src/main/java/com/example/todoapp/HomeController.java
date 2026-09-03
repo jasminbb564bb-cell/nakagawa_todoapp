@@ -122,6 +122,25 @@ public class HomeController {
         return "create";
     }
 
+    @GetMapping("/todos/{id}/duplicate")
+    public String duplicate(@PathVariable("id") Long id, Model model,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
+        Todo source = todoService.findById(id);
+        if (source == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Todo not found");
+        }
+        Todo copy = new Todo();
+        copy.setTitle(source.getTitle());
+        copy.setDetail(source.getDetail());
+        copy.setCategory(source.getCategory());
+        copy.setPriority(source.getPriority());
+        copy.setDueDate(source.getDueDate());
+        model.addAttribute("todo", copy);
+        model.addAttribute("duplicateMode", true);
+        return "create";
+    }
+
     @PostMapping("/todos/confirm")
     public String confirm(@Valid @ModelAttribute("todo") Todo todo, BindingResult bindingResult) {
         if (bindingResult.hasErrors()) {

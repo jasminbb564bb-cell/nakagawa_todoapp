@@ -8,7 +8,8 @@
 </head>
 <body>
     <div class="container">
-        <h1 class="page-title">ToDo登録</h1>
+        <h1 class="page-title" th:text="${duplicateMode} ? 'Todoを複製' : 'ToDo登録'">ToDo登録</h1>
+        <p class="flash" th:if="${duplicateMode}">元Todoの内容を引き継いでいます。確認・修正してから新しいTodoとして登録してください。</p>
         <form th:action="@{/todos/confirm}" th:object="${todo}" method="post">
             <div class="form-row">
                 <label class="form-label" for="title">やること</label>
