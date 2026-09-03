@@ -14,6 +14,7 @@ import lombok.Data;
 public class Todo {
 
     private Long id;
+    private Long userId;
     @NotBlank(message = "やることを入力してください")
     @Size(max = 255, message = "やることは255文字以内で入力してください")
     private String title;

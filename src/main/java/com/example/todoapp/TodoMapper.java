@@ -13,11 +13,24 @@ public interface TodoMapper {
             @Param("order") String order, @Param("includeCompleted") boolean includeCompleted,
             @Param("limit") int limit, @Param("offset") int offset, @Param("trash") boolean trash);
 
+    List<Todo> searchByUserId(@Param("userId") Long userId, @Param("keyword") String keyword,
+            @Param("category") String category, @Param("order") String order,
+            @Param("includeCompleted") boolean includeCompleted, @Param("limit") int limit,
+            @Param("offset") int offset, @Param("trash") boolean trash);
+
+    int countByUserId(@Param("userId") Long userId, @Param("keyword") String keyword,
+            @Param("category") String category, @Param("includeCompleted") boolean includeCompleted,
+            @Param("trash") boolean trash);
+
     int count(@Param("keyword") String keyword, @Param("category") String category,
             @Param("includeCompleted") boolean includeCompleted, @Param("trash") boolean trash);
 
     List<Todo> searchWithDueDate(@Param("keyword") String keyword, @Param("category") String category,
             @Param("order") String order, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    List<Todo> searchWithDueDateByUserId(@Param("userId") Long userId, @Param("keyword") String keyword,
+            @Param("category") String category, @Param("order") String order,
+            @Param("from") LocalDate from, @Param("to") LocalDate to);
 
     List<Todo> searchForSummary(@Param("from") LocalDate from, @Param("to") LocalDate to);
 

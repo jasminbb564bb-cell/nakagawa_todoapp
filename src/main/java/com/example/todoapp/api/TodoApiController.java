@@ -21,6 +21,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @RestController
 public class TodoApiController {
@@ -37,9 +41,10 @@ public class TodoApiController {
             @RequestParam(name = "category", defaultValue = "") String category,
             @RequestParam(name = "order", defaultValue = "asc") String order,
             @RequestParam(name = "from", required = false) LocalDate from,
-            @RequestParam(name = "to", required = false) LocalDate to) {
+            @RequestParam(name = "to", required = false) LocalDate to,
+            @AuthenticationPrincipal UserDetails userDetails) {
         String normalizedOrder = "desc".equals(order) ? "desc" : "asc";
-        return todoService.search(keyword, category, normalizedOrder, from, to)
+        return todoService.searchForUser(userDetails.getUsername(), keyword, category, normalizedOrder, from, to)
                 .stream()
                 .map(TodoDto::from)
                 .toList();
@@ -55,16 +60,19 @@ public class TodoApiController {
     }
 
     @PostMapping("/api/todos")
-    public ResponseEntity<TodoDto> create(@Valid @RequestBody TodoRequest request) {
+    public ResponseEntity<TodoDto> create(@Valid @RequestBody TodoRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
         Todo todo = toTodo(request);
-        todoService.create(todo);
+        todoService.create(userDetails.getUsername(), todo);
         Todo created = todoService.findById(todo.getId());
         return ResponseEntity.created(URI.create("/api/todos/" + todo.getId()))
                 .body(TodoDto.from(created));
     }
 
     @PutMapping("/api/todos/{id}")
-    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody TodoRequest request) {
+    public ResponseEntity<?> update(@PathVariable Long id, @Valid @RequestBody TodoRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         Todo existing = todoService.findById(id);
         if (existing == null) {
             return notFound(id);
@@ -76,13 +84,20 @@ public class TodoApiController {
     }
 
     @DeleteMapping("/api/todos/{id}")
-    public ResponseEntity<?> delete(@PathVariable Long id) {
+    public ResponseEntity<?> delete(@PathVariable Long id, @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         Todo existing = todoService.findById(id);
         if (existing == null) {
             return notFound(id);
         }
         todoService.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private void requireOwner(UserDetails userDetails, Long id) {
+        if (!todoService.isOwner(userDetails.getUsername(), id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Todo is not owned by the current user");
+        }
     }
 
     private ResponseEntity<org.springframework.http.ProblemDetail> notFound(Long id) {

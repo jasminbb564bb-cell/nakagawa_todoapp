@@ -5,6 +5,7 @@
     <select id="search" resultType="com.example.todoapp.Todo">
         SELECT
             id,
+            user_id,
             title,
             detail,
             category,
@@ -34,6 +35,32 @@
             <otherwise>ASC</otherwise>
         </choose>
         LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="searchByUserId" resultType="com.example.todoapp.Todo">
+        SELECT id, title, detail, category, priority, due_date, completed, completed_at, pinned, created_at, updated_at
+        FROM todos
+        <where>
+            user_id = #{userId}
+            <choose><when test="trash">AND deleted_at IS NOT NULL</when><otherwise>AND deleted_at IS NULL</otherwise></choose>
+            <if test="!includeCompleted">AND completed = FALSE</if>
+            <if test="keyword != null and keyword != ''">AND title LIKE CONCAT('%', #{keyword}, '%')</if>
+            <if test="category != null and category != '' and category != 'すべて'">AND category = #{category}</if>
+        </where>
+        ORDER BY pinned DESC, due_date
+        <choose><when test="order == 'desc'">DESC</when><otherwise>ASC</otherwise></choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countByUserId" resultType="int">
+        SELECT COUNT(*) FROM todos
+        <where>
+            user_id = #{userId}
+            <choose><when test="trash">AND deleted_at IS NOT NULL</when><otherwise>AND deleted_at IS NULL</otherwise></choose>
+            <if test="!includeCompleted">AND completed = FALSE</if>
+            <if test="keyword != null and keyword != ''">AND title LIKE CONCAT('%', #{keyword}, '%')</if>
+            <if test="category != null and category != '' and category != 'すべて'">AND category = #{category}</if>
+        </where>
     </select>
 
     <select id="count" resultType="int">
@@ -82,9 +109,24 @@
         </choose>
     </select>
 
+    <select id="searchWithDueDateByUserId" resultType="com.example.todoapp.Todo">
+        SELECT id, title, detail, category, priority, due_date, completed, completed_at, pinned, created_at, updated_at
+        FROM todos
+        <where>
+            user_id = #{userId} AND deleted_at IS NULL
+            <if test="keyword != null and keyword != ''">AND title LIKE CONCAT('%', #{keyword}, '%')</if>
+            <if test="category != null and category != '' and category != '邵ｺ蜷ｶ竏狗ｸｺ・ｦ'">AND category = #{category}</if>
+            <if test="from != null">AND due_date &gt;= #{from, jdbcType=DATE}</if>
+            <if test="to != null">AND due_date &lt;= #{to, jdbcType=DATE}</if>
+        </where>
+        ORDER BY pinned DESC, due_date
+        <choose><when test="order == 'desc'">DESC</when><otherwise>ASC</otherwise></choose>
+    </select>
+
     <select id="findById" parameterType="long" resultType="com.example.todoapp.Todo">
         SELECT
             id,
+            user_id,
             title,
             detail,
             category,
@@ -117,8 +159,8 @@
     </select>
 
     <insert id="insert" parameterType="com.example.todoapp.Todo" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO todos (title, detail, category, priority, due_date, completed)
-        VALUES (#{title}, #{detail}, #{category}, COALESCE(#{priority}, 2), #{dueDate, jdbcType=DATE}, COALESCE(#{completed}, false))
+        INSERT INTO todos (user_id, title, detail, category, priority, due_date, completed)
+        VALUES (#{userId}, #{title}, #{detail}, #{category}, COALESCE(#{priority}, 2), #{dueDate, jdbcType=DATE}, COALESCE(#{completed}, false))
     </insert>
 
     <update id="update" parameterType="com.example.todoapp.Todo">

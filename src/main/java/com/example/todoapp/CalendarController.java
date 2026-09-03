@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.stereotype.Controller;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -19,7 +21,9 @@ public class CalendarController {
             @RequestParam(name = "month", required = false) Integer month,
             @RequestParam(name = "view", required = false, defaultValue = "month") String view,
             @RequestParam(name = "from", required = false) String from,
+            @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
+        String username = userDetails.getUsername();
         LocalDate today = LocalDate.now();
         if ("week".equals(view)) {
             LocalDate requested = from == null ? today : LocalDate.parse(from);

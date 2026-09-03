@@ -5,15 +5,43 @@ import java.time.LocalDate;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 @Service
 @Slf4j
 public class TodoService {
 
     private final TodoMapper todoMapper;
+    private final UserMapper userMapper;
 
-    public TodoService(TodoMapper todoMapper) {
+    public TodoService(TodoMapper todoMapper, UserMapper userMapper) {
         this.todoMapper = todoMapper;
+        this.userMapper = userMapper;
+    }
+
+    private Long userId(String username) {
+        return userMapper.findByUsername(username).getId();
+    }
+
+    public boolean isOwner(String username, Long todoId) {
+        Todo todo = todoMapper.findById(todoId);
+        return todo != null && userId(username).equals(todo.getUserId());
+    }
+
+    public List<Todo> searchForUser(String username, String keyword, String category, String order,
+            boolean includeCompleted, int limit, int offset, boolean trash) {
+        return todoMapper.searchByUserId(userId(username), keyword, category, order, includeCompleted,
+                limit, offset, trash);
+    }
+
+    public int countForUser(String username, String keyword, String category, boolean includeCompleted,
+            boolean trash) {
+        return todoMapper.countByUserId(userId(username), keyword, category, includeCompleted, trash);
+    }
+
+    public List<Todo> searchForUser(String username, String keyword, String category, String order,
+            LocalDate from, LocalDate to) {
+        return todoMapper.searchWithDueDateByUserId(userId(username), keyword, category, order, from, to);
     }
 
     public List<Todo> search(String keyword, String category, String order, boolean includeCompleted,
@@ -46,9 +74,15 @@ public class TodoService {
         return todoMapper.findById(id);
     }
 
-    public void create(Todo todo) {
+    public void create(String username, Todo todo) {
+        todo.setUserId(userId(username));
         todoMapper.insert(todo);
         log.info("登録: id={}", todo.getId());
+    }
+
+    public void create(Todo todo) {
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        create(username, todo);
     }
 
     public void update(Todo todo) {

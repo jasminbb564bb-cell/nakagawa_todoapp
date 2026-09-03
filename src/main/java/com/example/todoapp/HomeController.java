@@ -4,6 +4,8 @@ import java.util.List;
 import java.nio.charset.StandardCharsets;
 
 import jakarta.validation.Valid;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -16,6 +18,8 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.web.server.ResponseStatusException;
+import org.springframework.http.HttpStatus;
 
 @Controller
 public class HomeController {
@@ -45,13 +49,15 @@ public class HomeController {
             @RequestParam(name = "includeCompleted", defaultValue = "false") boolean includeCompleted,
             @RequestParam(name = "page", defaultValue = "1") int page,
             @RequestParam(name = "trash", defaultValue = "0") int trash,
+            @AuthenticationPrincipal UserDetails userDetails,
             Model model) {
+        String username = userDetails.getUsername();
         String normalizedOrder = "desc".equals(order) ? "desc" : "asc";
         int pageSize = 10;
         boolean showTrash = trash == 1;
-        int totalPages = Math.max(1, (todoService.count(keyword, category, includeCompleted, showTrash) + pageSize - 1) / pageSize);
+        int totalPages = Math.max(1, (todoService.countForUser(username, keyword, category, includeCompleted, showTrash) + pageSize - 1) / pageSize);
         int currentPage = Math.max(1, Math.min(page, totalPages));
-        List<Todo> todos = todoService.search(keyword, category, normalizedOrder, includeCompleted,
+        List<Todo> todos = todoService.searchForUser(username, keyword, category, normalizedOrder, includeCompleted,
                 pageSize, (currentPage - 1) * pageSize, showTrash);
         model.addAttribute("todos", todos);
         model.addAttribute("keyword", keyword);
@@ -103,8 +109,10 @@ public class HomeController {
     }
 
     @PostMapping("/todos")
-    public String save(@ModelAttribute("todo") Todo todo, RedirectAttributes redirectAttributes) {
-        todoService.create(todo);
+    public String save(@ModelAttribute("todo") Todo todo,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes redirectAttributes) {
+        todoService.create(userDetails.getUsername(), todo);
         redirectAttributes.addFlashAttribute("message", "登録しました");
         return "redirect:/todos";
     }
@@ -128,7 +136,9 @@ public class HomeController {
     }
 
     @GetMapping("/todos/{id}/edit")
-    public String edit(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
+    public String edit(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         Todo todo = todoService.findById(id);
         if (todo == null) {
             redirectAttributes.addFlashAttribute("message", "見つかりませんでした");
@@ -156,7 +166,9 @@ public class HomeController {
     }
 
     @GetMapping("/todos/{id}/delete")
-    public String deleteConfirm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes) {
+    public String deleteConfirm(@PathVariable("id") Long id, Model model, RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         Todo todo = todoService.findById(id);
         if (todo == null) {
             redirectAttributes.addFlashAttribute("message", "見つかりませんでした");
@@ -168,7 +180,9 @@ public class HomeController {
     }
 
     @PostMapping("/todos/{id}/delete")
-    public String delete(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+    public String delete(@PathVariable("id") Long id, RedirectAttributes redirectAttributes,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         todoService.delete(id);
         redirectAttributes.addFlashAttribute("message", "削除しました");
         return "redirect:/todos";
@@ -192,10 +206,17 @@ public class HomeController {
 
     @PostMapping("/todos/{id}")
     public String update(@PathVariable("id") Long id, @ModelAttribute("todo") Todo todo,
-            RedirectAttributes redirectAttributes) {
+            RedirectAttributes redirectAttributes, @AuthenticationPrincipal UserDetails userDetails) {
+        requireOwner(userDetails, id);
         todo.setId(id);
         todoService.update(todo);
         redirectAttributes.addFlashAttribute("message", "保存しました");
         return "redirect:/todos";
+    }
+
+    private void requireOwner(UserDetails userDetails, Long id) {
+        if (!todoService.isOwner(userDetails.getUsername(), id)) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Todo is not owned by the current user");
+        }
     }
 }
