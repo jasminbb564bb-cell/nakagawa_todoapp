@@ -5,8 +5,8 @@
 body {
     margin: 0;
     color: #1f2937;
-    background: #f8fafc;
-    font-family: sans-serif;
+    background: #fcfcfa;
+    font-family: "Bahnschrift", "Arial Narrow", Arial, sans-serif;
     font-size: 16px;
     line-height: 1.6;
 }
@@ -132,7 +132,8 @@ body {
     display: grid;
     grid-template-columns: auto 1fr auto;
     align-items: center;
-    gap: 16px;
+    gap: 28px;
+    margin-bottom: 34px;
 }
 
 .calendar-header-left,
@@ -147,7 +148,10 @@ body {
 
 .calendar-header .page-title {
     text-align: center;
-    margin-bottom: 24px;
+    margin-bottom: 0;
+    color: #202322;
+    font-weight: 400;
+    letter-spacing: .08em;
 }
 
 .calendar-table {
@@ -158,7 +162,7 @@ body {
 
 .calendar-table th,
 .calendar-table td {
-    border: 1px solid #64748b;
+    border: 1px solid #d9dcda;
 }
 
 .calendar-page.week-view .calendar-table tbody tr,
@@ -198,16 +202,31 @@ body {
 }
 
 .calendar-table th {
-    padding: 8px;
-    background: #eef2f7;
+    padding: 12px 8px;
+    background: #fcfcfa;
+    color: #777b79;
+    font-size: 11px;
+    font-weight: 400;
+    letter-spacing: .16em;
     text-align: center;
 }
 
 .calendar-table td {
     height: 96px;
-    padding: 8px;
+    padding: 14px 12px;
+    background: #fff;
+    color: #303332;
+    font-weight: 400;
     vertical-align: top;
 }
+
+.calendar-table td > span { color: #303332; font-weight: 400; letter-spacing: .08em; }
+.calendar-table td.saturday > span { color: #456d91; }
+.calendar-table td.sunday > span { color: #b35a5a; }
+.calendar-table td.holiday > span { color: #ff651f; }
+.calendar-todo-link { color: #303332; font-size: 13px; line-height: 1.8; text-decoration: none; }
+.calendar-todo-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.calendar-weather-area { margin-top: 7px; }
 
 @media (max-width: 600px) {
     .calendar-header {
@@ -228,3 +247,61 @@ body {
         padding: 4px;
     }
 }
+
+/* Calendar visual theme: the existing behavior and data attributes remain unchanged. */
+.calendar-page {
+    max-width: 1080px;
+    padding: 48px 24px;
+}
+
+.calendar-page .btn {
+    border: 1px solid #c7c9c6;
+    border-radius: 2px;
+    padding: 8px 16px;
+    color: #3e4140;
+    font-weight: 400;
+    background: transparent;
+}
+
+.calendar-header .page-title {
+    color: #202322;
+    font-family: "Bahnschrift", "Arial Narrow", Arial, sans-serif;
+    font-size: 32px;
+    font-weight: 400;
+    letter-spacing: .12em;
+}
+
+.calendar-table th {
+    font-size: 0;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.calendar-table th::after {
+    color: #777b79;
+    font-size: 11px;
+    letter-spacing: .18em;
+}
+
+.calendar-table th:nth-child(1)::after { content: "SUN"; }
+.calendar-table th:nth-child(2)::after { content: "MON"; }
+.calendar-table th:nth-child(3)::after { content: "TUE"; }
+.calendar-table th:nth-child(4)::after { content: "WED"; }
+.calendar-table th:nth-child(5)::after { content: "THU"; }
+.calendar-table th:nth-child(6)::after { content: "FRI"; }
+.calendar-table th:nth-child(7)::after { content: "SAT"; }
+
+.calendar-table th,
+.calendar-table td {
+    border-color: #d9dcda;
+}
+
+.calendar-table th { padding: 14px 8px; background: #fcfcfa; }
+.calendar-table td { padding: 14px 12px; background: #fff; }
+.calendar-table td > span { color: #303332; font-weight: 400; letter-spacing: .08em; }
+.calendar-table td.saturday > span { color: #456d91; }
+.calendar-table td.sunday > span { color: #b35a5a; }
+.calendar-table td.holiday > span { color: #ff651f; }
+.calendar-todo-link { color: #303332; font-size: 13px; line-height: 1.8; text-decoration: none; }
+.calendar-todo-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.calendar-weather-area { margin-top: 7px; }

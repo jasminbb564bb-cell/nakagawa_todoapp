@@ -128,9 +128,9 @@
 
             const style = document.createElement('style');
             style.textContent = `
-                .calendar-table td.saturday { background-color: #eaf3ff; }
-                .calendar-table td.sunday { background-color: #ffecec; }
-                .calendar-table td.holiday { background-color: #fff4cc; }
+                .calendar-table td.saturday > span { color: #456d91; }
+                .calendar-table td.sunday > span { color: #b35a5a; }
+                .calendar-table td.holiday > span { color: #ff651f; }
             `;
             document.head.appendChild(style);
 
