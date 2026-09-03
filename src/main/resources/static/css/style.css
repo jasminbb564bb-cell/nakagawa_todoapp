@@ -161,6 +161,27 @@ body {
     border: 1px solid #64748b;
 }
 
+.calendar-page.week-view .calendar-table tbody tr,
+.calendar-page.week-view .calendar-table td {
+    height: auto;
+}
+
+.calendar-page.week-view .calendar-table td {
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.calendar-todo-link {
+    display: block;
+    margin-top: 8px;
+}
+
+.weather-mark {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
 .pagination {
     display: flex;
     gap: 8px;

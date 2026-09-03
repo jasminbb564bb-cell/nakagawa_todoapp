@@ -17,8 +17,26 @@ public class CalendarController {
     public String calendar(
             @RequestParam(name = "year", required = false) Integer year,
             @RequestParam(name = "month", required = false) Integer month,
+            @RequestParam(name = "view", required = false, defaultValue = "month") String view,
+            @RequestParam(name = "from", required = false) String from,
             Model model) {
         LocalDate today = LocalDate.now();
+        if ("week".equals(view)) {
+            LocalDate requested = from == null ? today : LocalDate.parse(from);
+            LocalDate weekStart = requested.minusDays(requested.getDayOfWeek().getValue() % 7);
+            List<CalendarDay> week = new ArrayList<>();
+            for (int index = 0; index < 7; index++) week.add(new CalendarDay(weekStart.plusDays(index)));
+            model.addAttribute("year", weekStart.getYear());
+            model.addAttribute("month", weekStart.getMonthValue());
+            model.addAttribute("monthTitle", weekStart + " の週");
+            model.addAttribute("from", weekStart);
+            model.addAttribute("to", weekStart.plusDays(6));
+            model.addAttribute("weeks", List.of(week));
+            model.addAttribute("isWeekView", true);
+            model.addAttribute("previousFrom", weekStart.minusDays(7));
+            model.addAttribute("nextFrom", weekStart.plusDays(7));
+            return "calendar";
+        }
         int displayYear = year == null ? today.getYear() : year;
         int displayMonth = month == null ? today.getMonthValue() : month;
         YearMonth target = YearMonth.of(displayYear, displayMonth);
@@ -48,6 +66,7 @@ public class CalendarController {
         model.addAttribute("from", firstDay);
         model.addAttribute("to", lastDay);
         model.addAttribute("weeks", weeks);
+        model.addAttribute("isWeekView", false);
         YearMonth previous = target.minusMonths(1);
         YearMonth next = target.plusMonths(1);
         model.addAttribute("previousYear", previous.getYear());
