@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="ja" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}">
+    <title>共有設定</title><link rel="stylesheet" href="/css/style.css">
+</head>
+<body><main class="container">
+    <h1 class="page-title">共有設定</h1>
+    <p>対象Todo: <span th:text="${todo.title}">Todo</span></p>
+    <label for="share-hours">有効期限</label>
+    <select id="share-hours" class="form-input"><option value="1">1時間</option><option value="24" selected>24時間</option><option value="168">7日間</option></select>
+    <p><button type="button" class="btn" id="share-generate">リンクを生成</button></p>
+    <div id="share-result" hidden>
+        <label for="share-url">生成済み共有URL</label>
+        <input id="share-url" class="form-input" type="text" readonly>
+        <button type="button" class="btn" id="share-copy">コピー</button>
+        <p>有効期限: <span id="share-expires"></span></p>
+        <button type="button" class="btn" id="share-stop">共有を停止</button>
+    </div>
+    <p id="share-message" class="error"></p>
+    <p><a class="btn sub" th:href="@{/todos}">一覧へ戻る</a></p>
+</main>
+<script>
+(() => {const id=[[${todo.id}]], c=document.querySelector('meta[name="_csrf"]').content;
+const msg=t=>document.getElementById('share-message').textContent=t;
+document.getElementById('share-generate').onclick=async()=>{const r=await fetch('/api/share/'+id,{method:'POST',headers:{'Content-Type':'application/json','X-CSRF-TOKEN':c},body:JSON.stringify({hours:Number(document.getElementById('share-hours').value)})});if(!r.ok)return msg('共有リンクを作成できません。');const x=await r.json();document.getElementById('share-url').value=location.origin+'/share/'+x.token;document.getElementById('share-expires').textContent=x.expiresAt.replace('T',' ');document.getElementById('share-result').hidden=false;};
+document.getElementById('share-copy').onclick=()=>navigator.clipboard.writeText(document.getElementById('share-url').value);
+document.getElementById('share-stop').onclick=async()=>{const r=await fetch('/api/share/'+id,{method:'DELETE',headers:{'X-CSRF-TOKEN':c}});if(r.ok){document.getElementById('share-result').hidden=true;msg('共有を停止しました。');}};})();
+</script></body></html>
